@@ -3,7 +3,6 @@ import struct
 import os
 import threading
 import time
-from turtle import screensize
 import cv2
 from PIL import Image,ImageFile
 import cv2 as cv
