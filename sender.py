@@ -49,11 +49,7 @@ class Multicast_sender:
                 msg = self.capture_screen()
                 msg_len = len(msg)
 
-            
-            
-
-
-
+ 
 def runner():
     try:
         multi_class = Multicast_sender()
