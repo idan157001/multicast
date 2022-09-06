@@ -3,12 +3,14 @@ import struct
 import os
 import threading
 import time
+from turtle import screensize
 import cv2
 from PIL import Image,ImageFile
 import cv2 as cv
 import io
 import numpy as np
 import sys
+from pynput import keyboard
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True # permit sending large file on multicast
 MULTICAST_GROUP = '224.1.1.1'
@@ -18,9 +20,10 @@ SERVER_ADDRESS = ('', 1234)
 
 
 
-class multicast_to_vid:
+class Multicast_to_vid:
     def __init__(self):
         self.SCREEN_DATA = b"" # bytes of png
+        self.screen_size = [1000,800]
         self.listen_to_multicast() # creating socket and bind to multicast
 
     def save_img(self):
@@ -28,10 +31,10 @@ class multicast_to_vid:
         while True:
             data,addr = self.sock.recvfrom(64000)
             if data:
-                self.SCREEN_DATA+= data    
+                self.SCREEN_DATA+= data
             else:
-                self.load_frame()   # if picture is full show it on screen with opencv         
-        
+                self.load_frame()   # if picture is full show it on screen with opencv    
+
     def listen_to_multicast(self):
         """Create the socket"""
 
@@ -51,14 +54,33 @@ class multicast_to_vid:
         
         image = Image.open(io.BytesIO(self.SCREEN_DATA))
         image = np.array(image)
-        image = cv.resize(image,[1000,600])
+        image = cv.resize(image,self.screen_size)
         cv.imshow('frame',image)
-        cv.waitKey(1)
         self.SCREEN_DATA = b"" # reseting bytes of png after show it
-    
+        if cv2.waitKey(25) & 0xFF == ord('q'):
+            cv2.destroyAllWindows()
+            sys.exit(1)
+
+    def change_screen_size(self,key):
+        """ resizing screen by pressing '-'/'+' key """
+        
+        SIZE = 50
+        key = str(key)
+        if key == "'+'":
+           self.screen_size[0]+=SIZE; self.screen_size[1]+=SIZE
+        elif key == "'-'":
+            self.screen_size[0]-=SIZE; self.screen_size[1]-=SIZE
 
 
-x = multicast_to_vid()
 
-threading.Thread(target=x.save_img).start()
+
+
+cls = Multicast_to_vid()
+
+listener = keyboard.Listener(on_press=cls.change_screen_size)
+save_image = threading.Thread(target=cls.save_img)
+
+if __name__ == '__main__':
+    listener.start()
+    save_image.start()
 
